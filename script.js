@@ -75,10 +75,16 @@ async function getIPAddress() {
     }
 }
 
+// Generate a unique ID for each visitor
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
 // Save visitor data to localStorage
 function saveVisitorData(ip, browser, platform) {
     const now = new Date();
     const visit = {
+        id: generateId(),
         time: now.toISOString(),
         ip: ip,
         browser: browser,
@@ -87,20 +93,84 @@ function saveVisitorData(ip, browser, platform) {
     };
 
     // Get existing visits or initialize empty array
-    let visits = JSON.parse(localStorage.getItem('visitorData') || '[]');
+    let visits = getAllVisits();
     
-    // Add new visit
-    visits.unshift(visit);
+    // Check if this IP already exists in the last hour to prevent duplicates
+    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    const isDuplicate = visits.some(visit => 
+        visit.ip === ip && 
+        visit.timestamp > oneHourAgo
+    );
     
-    // Keep only the last 100 visits to prevent localStorage from getting too large
-    if (visits.length > 100) {
-        visits = visits.slice(0, 100);
+    // Only add if not a duplicate
+    if (!isDuplicate) {
+        visits.unshift(visit);
+        // Keep only the last 1000 visits to prevent localStorage from getting too large
+        if (visits.length > 1000) {
+            visits = visits.slice(0, 1000);
+        }
+        
+        // Save back to localStorage
+        localStorage.setItem('visitorData', JSON.stringify(visits));
     }
     
-    // Save back to localStorage
-    localStorage.setItem('visitorData', JSON.stringify(visits));
-    
     return visits;
+}
+
+// Get all visits from localStorage
+function getAllVisits() {
+    return JSON.parse(localStorage.getItem('visitorData') || '[]');
+}
+
+// Delete a specific visitor by ID
+function deleteVisitor(visitorId) {
+    let visits = getAllVisits();
+    visits = visits.filter(visit => visit.id !== visitorId);
+    localStorage.setItem('visitorData', JSON.stringify(visits));
+    return visits;
+}
+
+// Clear all visitor data
+function clearAllVisitors() {
+    localStorage.removeItem('visitorData');
+    return [];
+}
+
+// Create confirmation dialog
+function createConfirmationDialog(message, onConfirm) {
+    const dialog = document.createElement('div');
+    dialog.className = 'confirmation-dialog';
+    dialog.innerHTML = `
+        <div class="confirmation-box">
+            <p>${message}</p>
+            <div class="confirmation-buttons">
+                <button class="btn" id="confirmCancel">Cancel</button>
+                <button class="btn btn-danger" id="confirmDelete">Delete</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Show the dialog
+    setTimeout(() => dialog.classList.add('visible'), 10);
+    
+    // Handle button clicks
+    document.getElementById('confirmCancel').addEventListener('click', () => {
+        dialog.remove();
+    });
+    
+    document.getElementById('confirmDelete').addEventListener('click', () => {
+        onConfirm();
+        dialog.remove();
+    });
+    
+    // Close on click outside
+    dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+            dialog.remove();
+        }
+    });
 }
 
 // Update the dashboard with visitor data
@@ -118,18 +188,53 @@ function updateDashboard(visits) {
     totalVisitorsElement.textContent = visits.length;
     document.getElementById('uniqueIPs').textContent = uniqueIPs.size;
     
-    // Add rows for each visit (show only the 20 most recent)
-    const recentVisits = visits.slice(0, 20);
+    // Add rows for each visit (show only the 100 most recent)
+    const recentVisits = visits.slice(0, 100);
+    
+    if (recentVisits.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-light);">
+                No visitor data available
+            </td>
+        `;
+        visitorTableBody.appendChild(row);
+        return;
+    }
+    
     recentVisits.forEach(visit => {
         const row = document.createElement('tr');
         const visitTime = new Date(visit.time);
         
         row.innerHTML = `
             <td>${formatTime(visitTime)}</td>
-            <td>${visit.ip}</td>
-            <td>${visit.browser}</td>
-            <td>${visit.platform}</td>
+            <td>${visit.ip || 'Unknown'}</td>
+            <td>${visit.browser || 'Unknown'}</td>
+            <td>${visit.platform || 'Unknown'}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn btn-sm btn-danger delete-btn" data-id="${visit.id}" title="Delete this entry">
+                        <i class="material-icons">delete</i>
+                    </button>
+                </div>
+            </td>
         `;
+        
+        // Add delete button event listener
+        const deleteBtn = row.querySelector('.delete-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const visitorId = deleteBtn.getAttribute('data-id');
+                createConfirmationDialog(
+                    'Are you sure you want to delete this visitor entry?',
+                    () => {
+                        const updatedVisits = deleteVisitor(visitorId);
+                        updateDashboard(updatedVisits);
+                    }
+                );
+            });
+        }
         
         visitorTableBody.appendChild(row);
     });
@@ -139,23 +244,36 @@ function updateDashboard(visits) {
 async function initDashboard() {
     // Get visitor info
     const browserInfo = getBrowserInfo();
-    const ip = await getIPAddress();
     
-    // Save the visit
-    const visits = saveVisitorData(
-        ip,
-        browserInfo.browser,
-        browserInfo.platform
-    );
+    try {
+        const ip = await getIPAddress();
+        // Save the visit
+        saveVisitorData(ip, browserInfo.browser, browserInfo.platform);
+    } catch (error) {
+        console.error('Error saving visitor data:', error);
+    }
     
-    // Update the dashboard
-    updateDashboard(visits);
+    // Initial dashboard update
+    updateDashboard(getAllVisits());
     
-    // Update the dashboard every 5 seconds to show any new visits
+    // Set up clear all button
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', () => {
+            createConfirmationDialog(
+                'Are you sure you want to delete ALL visitor data? This cannot be undone!',
+                () => {
+                    clearAllVisitors();
+                    updateDashboard([]);
+                }
+            );
+        });
+    }
+    
+    // Update the dashboard every 30 seconds to show any new visits
     setInterval(() => {
-        const storedVisits = JSON.parse(localStorage.getItem('visitorData') || '[]');
-        updateDashboard(storedVisits);
-    }, 5000);
+        updateDashboard(getAllVisits());
+    }, 30000);
 }
 
 // Start the dashboard when the page loads
