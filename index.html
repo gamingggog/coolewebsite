@@ -44,6 +44,12 @@
         <main class="main-content">
             <div class="visitor-table-container">
                 <h2>Recent Visitors</h2>
+                <div class="table-header">
+                    <h2>Recent Visitors</h2>
+                    <button id="clearAllBtn" class="btn btn-danger" title="Clear all visitor data">
+                        <i class="material-icons">delete_forever</i> Clear All
+                    </button>
+                </div>
                 <table id="visitorTable">
                     <thead>
                         <tr>
@@ -51,6 +57,7 @@
                             <th>IP Address</th>
                             <th>Browser</th>
                             <th>Platform</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="visitorTableBody">
