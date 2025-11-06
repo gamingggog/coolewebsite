@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <!-- Password Protection Overlay -->
+    <div id="passwordOverlay" class="password-overlay">
+        <div class="password-box">
+            <h2><i class="material-icons">lock</i> Enter Password</h2>
+            <input type="password" id="passwordInput" placeholder="Enter password" autofocus>
+            <button id="unlockButton" class="unlock-button">
+                <i class="material-icons">lock_open</i> Unlock Dashboard
+            </button>
+            <p id="errorMessage" class="error-message"></p>
+        </div>
+    </div>
+
+    <div class="dashboard" id="dashboardContent" style="display: none;">
+        <header class="header">
+            <h1><i class="material-icons">dashboard</i> Visitor Dashboard</h1>
+            <div class="stats">
+                <div class="stat-card">
+                    <i class="material-icons">people</i>
+                    <div>
+                        <h3>Total Visitors</h3>
+                        <p id="totalVisitors">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="material-icons">public</i>
+                    <div>
+                        <h3>Unique IPs</h3>
+                        <p id="uniqueIPs">0</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <div class="visitor-table-container">
+                <h2>Recent Visitors</h2>
+                <table id="visitorTable">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>IP Address</th>
+                            <th>Browser</th>
+                            <th>Platform</th>
+                        </tr>
+                    </thead>
+                    <tbody id="visitorTableBody">
+                        <!-- Visitor data will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Password protection
+        const PASSWORD = 'mmanistgeil';
+        const passwordOverlay = document.getElementById('passwordOverlay');
+        const dashboardContent = document.getElementById('dashboardContent');
+        const passwordInput = document.getElementById('passwordInput');
+        const unlockButton = document.getElementById('unlockButton');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function checkPassword() {
+            if (passwordInput.value === PASSWORD) {
+                passwordOverlay.style.display = 'none';
+                dashboardContent.style.display = 'block';
+                // Store the session
+                sessionStorage.setItem('dashboardUnlocked', 'true');
+            } else {
+                errorMessage.textContent = 'Incorrect password. Please try again.';
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+
+        // Check if already unlocked in this session
+        if (sessionStorage.getItem('dashboardUnlocked') === 'true') {
+            passwordOverlay.style.display = 'none';
+            dashboardContent.style.display = 'block';
+        }
+
+        // Add event listeners
+        unlockButton.addEventListener('click', checkPassword);
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+    </script>
+
+    <script src="script.js"></script>
+</body>
+</html>
