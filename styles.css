@@ -304,10 +304,67 @@ h2::before {
     border-radius: 3px;
 }
 
+/* Table Header with Actions */
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    white-space: nowrap;
+}
+
+.btn i {
+    font-size: 1.1em;
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+    transform: translateY(-1px);
+}
+
+.btn-sm {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+}
+
+.btn-sm i {
+    font-size: 1em;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
 /* Table Styles */
 .visitor-table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    position: relative;
 }
 
 table {
@@ -392,6 +449,71 @@ td:nth-child(2) {
     font-family: 'Fira Code', 'Courier New', monospace;
     color: var(--primary-dark);
     font-weight: 500;
+}
+
+/* Style the action cells */
+td:last-child {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Confirmation Dialog */
+.confirmation-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.confirmation-dialog.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.confirmation-box {
+    background: white;
+    padding: 2rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.confirmation-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.confirmation-buttons .btn {
+    min-width: 80px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .table-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .action-buttons {
+        justify-content: flex-start;
+    }
+    
+    td:last-child {
+        text-align: left;
+    }
 }
 
 /* Add a subtle animation to new rows */
